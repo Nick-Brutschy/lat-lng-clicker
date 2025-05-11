@@ -2,47 +2,155 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Click-to-Get Lat/Lng</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom TimeGuessr</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
 
-  <!-- Leaflet CSS (jsDelivr CDN) -->
+  <!-- Leaflet CSS -->
   <link
     rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
   />
 
   <style>
-    /* make map fill whole page */
-    html, body, #map {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
+    body { margin:0; font:16px/1.5 sans-serif; }
+    #photo { width:100%; max-height:400px; object-fit:cover; }
+    #map { height:400px; }
+    #controls { padding:1em; display:flex; align-items:center; gap:1em; }
+    #slider { flex:1; }
+    #results { padding:1em; }
+    table { width:100%; border-collapse:collapse; margin-top:1em; }
+    th,td { border:1px solid #ccc; padding:0.5em; text-align:center; }
   </style>
 </head>
 <body>
-  <div id="map"></div>
 
-  <!-- Leaflet JS (jsDelivr CDN) -->
-  <script
-    src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
-  ></script>
+  <!-- GAME SCREEN -->
+  <div id="game">
+    <img id="photo" alt="Round image">
+    <div id="map"></div>
+    <div id="controls">
+      <label>Year: <span id="yearDisplay"></span></label>
+      <input type="range" id="slider" min="1900" max="2025" />
+      <button id="guessButton">Make Guess</button>
+    </div>
+  </div>
 
+  <!-- RESULTS SCREEN -->
+  <div id="results" style="display:none;">
+    <h2>Your Score</h2>
+    <table>
+      <thead>
+        <tr><th>Round</th><th>Distance (km)</th><th>Year Error</th><th>Score</th></tr>
+      </thead>
+      <tbody id="resultsBody"></tbody>
+      <tfoot>
+        <tr>
+          <th>Total</th><td colspan="2"></td><th id="totalScore"></th>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // 1. initialize map at center [0,0], zoom level 2
-    const map = L.map('map').setView([0, 0], 2);
+  // —— CONFIG ——
+  const MAX_ROUNDS = 5;
+  const YEAR_MIN = 1900, YEAR_MAX = 2025;
+  const EARTH_HALF_CIRC = 20037.5; // km, for scoring
 
-    // 2. add OpenStreetMap tiles
+  // —— STATE ——
+  let allPhotos = [], gamePhotos = [], current = 0, rounds = [];
+
+  // —— UI ELEMENTS ——
+  const photoEl     = document.getElementById('photo');
+  const slider      = document.getElementById('slider');
+  const yearDisp    = document.getElementById('yearDisplay');
+  const guessBtn    = document.getElementById('guessButton');
+  const gameDiv     = document.getElementById('game');
+  const resultsDiv  = document.getElementById('results');
+  const resultsBody = document.getElementById('resultsBody');
+  const totalScoreE = document.getElementById('totalScore');
+
+  // —— INIT ——
+  slider.min = YEAR_MIN;
+  slider.max = YEAR_MAX;
+  slider.addEventListener('input', () => yearDisp.textContent = slider.value);
+
+  guessBtn.addEventListener('click', () => {
+    if (!map.userLatLng) {
+      return alert('Please click on the map to place your location guess.');
+    }
+    const p = gamePhotos[current];
+    const gl = map.userLatLng;
+    const dist = haversine(p.lat,p.lng, gl.lat,gl.lng);
+    const errY = Math.abs(slider.value - p.year);
+    const sDist = Math.max(0, Math.round((1 - dist/EARTH_HALF_CIRC)*5000));
+    const sYear = Math.max(0, Math.round((1 - errY/(YEAR_MAX-YEAR_MIN))*5000));
+    rounds.push({ round: current+1, dist: dist.toFixed(1), errY, score: sDist+sYear });
+    current++;
+    nextRound();
+  });
+
+  // load your metadata
+  fetch('photos.json')
+    .then(r => r.json())
+    .then(arr => { allPhotos = arr; startGame(); })
+    .catch(e => alert('Could not load photos.json'));
+
+  // —— GAME FLOW ——
+  function startGame() {
+    gamePhotos = shuffle(allPhotos).slice(0,MAX_ROUNDS);
+    current = 0; rounds = [];
+    nextRound();
+  }
+
+  function nextRound() {
+    if (current >= gamePhotos.length) return showResults();
+    const p = gamePhotos[current];
+    // set image
+    photoEl.src = p.src;
+    // reset slider to midpoint
+    const mid = Math.floor((YEAR_MIN + YEAR_MAX)/2);
+    slider.value = mid; yearDisp.textContent = mid;
+    // init map
+    if (window.map) map.remove();
+    window.map = L.map('map').setView([0,0],2);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+      maxZoom: 19
     }).addTo(map);
+    // wait for user click
+    map.once('click', e => { map.userLatLng = e.latlng; });
+  }
 
-    // 3. on click, pop up lat/lng
-    map.on('click', (e) => {
-      const { lat, lng } = e.latlng;
-      alert(`Latitude: ${lat.toFixed(6)}\nLongitude: ${lng.toFixed(6)}`);
+  function showResults() {
+    gameDiv.style.display = 'none';
+    resultsDiv.style.display = 'block';
+    let total = 0;
+    rounds.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${r.round}</td>
+        <td>${r.dist}</td>
+        <td>${r.errY}</td>
+        <td>${r.score}</td>
+      `;
+      resultsBody.appendChild(tr);
+      total += r.score;
     });
+    totalScoreE.textContent = total;
+  }
+
+  // —— UTILITIES ——
+  function shuffle(a){ return a.sort(()=>0.5 - Math.random()); }
+
+  function haversine(lat1,lng1,lat2,lng2){
+    const toRad = Math.PI/180;
+    const dLat = (lat2-lat1)*toRad, dLng = (lng2-lng1)*toRad;
+    const h = Math.sin(dLat/2)**2 +
+              Math.cos(lat1*toRad)*Math.cos(lat2*toRad)*Math.sin(dLng/2)**2;
+    return 2*6371 * Math.asin(Math.sqrt(h));
+  }
   </script>
 </body>
 </html>
