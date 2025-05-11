@@ -12,15 +12,50 @@
   />
 
   <style>
-    body { margin:0; font:16px/1.5 sans-serif; }
-    /* full-width, auto-height so the entire image shows */
-    #photo { width:100%; height:auto; display:block; }
-    #map   { height:400px; }
-    #controls { padding:1em; display:flex; align-items:center; gap:1em; }
-    #slider  { flex:1; }
-    #results { padding:1em; }
-    table { width:100%; border-collapse:collapse; margin-top:1em; }
-    th,td  { border:1px solid #ccc; padding:0.5em; text-align:center; }
+    body {
+      margin: 0;
+      font: 16px/1.5 sans-serif;
+    }
+
+    /* limit the photo height so it never dominates the screen */
+    #photo {
+      display: block;
+      max-height: 300px;
+      width: auto;
+      max-width: 100%;
+      margin: 0 auto;
+    }
+
+    #map {
+      height: 400px;
+    }
+
+    #controls {
+      padding: 1em;
+      display: flex;
+      align-items: center;
+      gap: 1em;
+    }
+
+    #slider {
+      flex: 1;
+    }
+
+    #results {
+      padding: 1em;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1em;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.5em;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -41,12 +76,19 @@
     <h2>Your Score</h2>
     <table>
       <thead>
-        <tr><th>Round</th><th>Distance (km)</th><th>Year Error</th><th>Score</th></tr>
+        <tr>
+          <th>Round</th>
+          <th>Distance (km)</th>
+          <th>Year Error</th>
+          <th>Score</th>
+        </tr>
       </thead>
       <tbody id="resultsBody"></tbody>
       <tfoot>
         <tr>
-          <th>Total</th><td colspan="2"></td><th id="totalScore"></th>
+          <th>Total</th>
+          <td colspan="2"></td>
+          <th id="totalScore"></th>
         </tr>
       </tfoot>
     </table>
@@ -94,8 +136,12 @@
       const dist = haversine(p.lat, p.lng, gl.lat, gl.lng);
       const errY = Math.abs(slider.value - p.year);
 
-      const sDist = Math.max(0, Math.round((1 - dist / EARTH_HALF_CIRC) * 5000));
-      const sYear = Math.max(0, Math.round((1 - errY / (YEAR_MAX - YEAR_MIN)) * 5000));
+      const sDist = Math.max(0,
+        Math.round((1 - dist / EARTH_HALF_CIRC) * 5000)
+      );
+      const sYear = Math.max(0,
+        Math.round((1 - errY / (YEAR_MAX - YEAR_MIN)) * 5000)
+      );
 
       rounds.push({
         round: current + 1,
@@ -142,12 +188,13 @@
         maxZoom: 19
       }).addTo(map);
 
-      marker = null;
-
-      // drop a marker on click
-      map.once('click', e => {
-        if (marker) marker.remove();
-        marker = L.marker(e.latlng).addTo(map);
+      // allow moving the marker on each click
+      map.on('click', e => {
+        if (marker) {
+          marker.setLatLng(e.latlng);
+        } else {
+          marker = L.marker(e.latlng).addTo(map);
+        }
         map.userLatLng = e.latlng;
       });
     }
