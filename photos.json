@@ -1,0 +1,38 @@
+[
+  {
+    "src": "images/photo1.jpg",
+    "lat": 42.4234,
+    "lng": -71.2182,
+    "year": 1972,
+    "caption": "Bethy in a play at the Bowman school."
+  },
+  {
+    "src": "images/photo2.jpg",
+    "lat": 41.5569,,
+    "lng": -72.6568,
+    "year": 1992,
+    "caption": "Dr. Elizabeth Grady's medical school graduation."
+  },
+  {
+    "src": "images/photo3.jpg",
+    "lat": 40.7128,
+    "lng": -74.0060,
+    "year": 1989,
+    "caption": "Bob and Michael playing in the river."
+  },
+  {
+    "src": "images/photo4.jpg",
+    "lat": 40.7128,
+    "lng": -74.0060,
+    "year": 1989,
+    "caption": "Bob and Michael playing in the river."
+  },
+  {
+    "src": "images/photo5.jpg",
+    "lat": 40.7128,
+    "lng": -74.0060,
+    "year": 1989,
+    "caption": "Bob and Michael playing in the river."
+  }
+  
+]
