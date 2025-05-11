@@ -4,30 +4,42 @@
   <meta charset="utf-8" />
   <title>Click-to-Get Lat/Lng</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Leaflet CSS (jsDelivr CDN) -->
   <link
     rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha512-xwE/HOIj6giWt2aXxgXq16Mm7QYow3PIeP7+J+2H2wrXef3hQ/smWZ9bQeKVW5EycXKnEbC9r2jR0J+5pJLBFA=="
-    crossorigin=""
+    href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
   />
+
   <style>
-    html, body, #map { height: 100%; margin: 0; padding: 0; }
+    /* make map fill whole page */
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
+
+  <!-- Leaflet JS (jsDelivr CDN) -->
   <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha512-ZnRPhKNRMxgrUYjK1yrg935rwSucQv7XlRJ9Goj2t0MGFTp8IgL9qmQKmWb0h+NsN2eVqd4nvkXHjN5cZo3mZA=="
-    crossorigin=""
+    src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
   ></script>
+
   <script>
+    // 1. initialize map at center [0,0], zoom level 2
     const map = L.map('map').setView([0, 0], 2);
+
+    // 2. add OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
     }).addTo(map);
-    map.on('click', e => {
+
+    // 3. on click, pop up lat/lng
+    map.on('click', (e) => {
       const { lat, lng } = e.latlng;
       alert(`Latitude: ${lat.toFixed(6)}\nLongitude: ${lng.toFixed(6)}`);
     });
