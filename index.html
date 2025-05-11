@@ -53,7 +53,7 @@
       cursor: pointer;
     }
 
-    /* ROUND LAYOUT WRAPPER */
+    /* ROUND LAYOUT */
     #game { display: none; }
     .roundContainer {
       display: flex;
@@ -75,7 +75,6 @@
       border: 4px solid #ccc;
       border-radius: 4px;
       touch-action: none;
-      /* removed fixed height so image auto‐sizes to its native aspect */
     }
     .zoom-container img {
       display: block;
@@ -98,13 +97,8 @@
       gap: 1rem;
       align-items: center;
     }
-    #controls label {
-      white-space: nowrap;
-    }
-    #slider {
-      flex: 1;
-      accent-color: #d64541;
-    }
+    #controls label { white-space: nowrap; }
+    #slider { flex: 1; accent-color: #d64541; }
     input[type='range']::-webkit-slider-thumb {
       background: #d64541;
       border: none;
@@ -183,10 +177,7 @@
 
   <!-- SPLASH SCREEN -->
   <div id="splash">
-    <img id="splashLogo"
-         src="splashpagelogo.png"
-         alt="MOMGUESSR Logo"
-         draggable="false">
+    <img id="splashLogo" src="splashpagelogo.png" alt="MOMGUESSR Logo" draggable="false">
     <button id="playBtn">Play</button>
   </div>
 
@@ -199,20 +190,15 @@
           <img id="photo" alt="Round image" draggable="false">
         </div>
       </div>
-
-      <!-- MAP + CONTROLS SIDE -->
+      <!-- MAP + SLIDER SIDE -->
       <div id="interactionArea">
-        <div id="map"></div>        <!-- ← Ensure this never gets removed! -->
+        <div id="map"></div>
         <div id="controls">
           <label>
             <span id="labelText">Year:</span>
             <span id="yearDisplay">1900</span>
           </label>
-          <input type="range"
-                 id="slider"
-                 min="1900"
-                 max="2025"
-                 draggable="false"/>
+          <input type="range" id="slider" min="1900" max="2025" draggable="false"/>
           <button id="guessButton">Make Guess</button>
         </div>
       </div>
@@ -235,18 +221,13 @@
         <table>
           <thead>
             <tr>
-              <th>Round</th>
-              <th>Distance (mi)</th>
-              <th>Year Err</th>
-              <th>Score</th>
+              <th>Round</th><th>Distance (mi)</th><th>Year Err</th><th>Score</th>
             </tr>
           </thead>
           <tbody id="resultsBody"></tbody>
           <tfoot>
             <tr>
-              <th>Total</th>
-              <td colspan="2"></td>
-              <th id="totalScore"></th>
+              <th>Total</th><td colspan="2"></td><th id="totalScore"></th>
             </tr>
           </tfoot>
         </table>
@@ -257,15 +238,10 @@
   <!-- LEAFLET JS -->
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // STATE
     let map, guessMarker, correctMarker, connectionLine, finalMap;
     let allPhotos = [], gamePhotos = [], current = 0, rounds = [];
-    const MAX_ROUNDS = 5,
-          YEAR_MIN = 1900,
-          YEAR_MAX = 2025,
-          EARTH_HALF_CIRC = 20037.5;
+    const MAX_ROUNDS = 5, YEAR_MIN = 1900, YEAR_MAX = 2025, EARTH_HALF_CIRC = 20037.5;
 
-    // NODES
     const splash      = document.getElementById('splash'),
           playBtn     = document.getElementById('playBtn'),
           gameDiv     = document.getElementById('game'),
@@ -283,24 +259,22 @@
           resultsBody = document.getElementById('resultsBody'),
           totalScoreE = document.getElementById('totalScore');
 
-    // LOAD PHOTOS
     fetch('photos.json')
       .then(r=>r.json())
-      .then(a=>allPhotos=a)
-      .catch(_=>alert('Could not load photos.json'));
+      .then(a=> allPhotos = a)
+      .catch(_=> alert('Could not load photos.json'));
 
-    // SLIDER
     slider.min = YEAR_MIN;
     slider.max = YEAR_MAX;
-    slider.addEventListener('input', ()=> yearDisp.textContent = slider.value);
+    slider.addEventListener('input', () => {
+      yearDisp.textContent = slider.value;
+    });
 
-    // IMAGE PAN/ZOOM
     let scale=1, ox=0, oy=0, sx, sy, panning=false;
     function updateImg(){
-      const c=photoEl.parentNode,
-            cw=c.clientWidth, ch=c.clientHeight,
-            sw=cw*scale, sh=ch*scale,
-            minX=Math.min(0,cw-sw), minY=Math.min(0,ch-sh);
+      const c=photoEl.parentNode, cw=c.clientWidth, ch=c.clientHeight;
+      const sw=cw*scale, sh=ch*scale;
+      const minX=Math.min(0,cw-sw), minY=Math.min(0,ch-sh);
       ox=Math.max(minX,Math.min(ox,0));
       oy=Math.max(minY,Math.min(oy,0));
       photoEl.style.transform=`translate(${ox}px,${oy}px) scale(${scale})`;
@@ -322,7 +296,6 @@
       panning=false; photoEl.style.cursor='grab';
     });
 
-    // START
     playBtn.onclick=()=>{
       splash.style.display='none';
       gameDiv.style.display='block';
@@ -330,39 +303,33 @@
     };
 
     function startGame(){
-      gamePhotos=shuffle(allPhotos).slice(0,MAX_ROUNDS);
-      current=0; rounds=[];
+      // use first five photos in order, no shuffle
+      gamePhotos = allPhotos.slice(0, MAX_ROUNDS);
+      current=0;
+      rounds=[];
       nextRound();
     }
 
     function nextRound(){
-      // hide feedback + reset markers
       feedback.style.display='none';
       captionFb.textContent='';
       labelText.textContent='Year:';
       guessBtn.style.display='inline-block';
 
-      // remove old markers/lines + clear vars
       if(guessMarker){ guessMarker.remove(); guessMarker=null; }
       if(correctMarker){ correctMarker.remove(); correctMarker=null; }
       if(connectionLine){ connectionLine.remove(); connectionLine=null; }
-
-      // destroy old map if present
       if(map){ map.remove(); map=null; }
 
       if(current>=gamePhotos.length) return showResults();
 
-      // load photo
       const p=gamePhotos[current];
       scale=1; ox=oy=0; updateImg();
       photoEl.src=p.src;
 
-      // reset slider
       const mid=(YEAR_MIN+YEAR_MAX)/2|0;
-      slider.value=mid;
-      yearDisp.textContent=mid;
+      slider.value=mid; yearDisp.textContent=mid;
 
-      // init map
       map=L.map('map').setView([0,0],2);
       L.tileLayer(
         'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}
@@ -371,10 +338,7 @@
       map.on('click',e=>{
         if(!guessMarker){
           guessMarker=L.circleMarker(e.latlng,{
-            color:'black',
-            fillColor:'black',
-            fillOpacity:1,
-            radius:8
+            color:'black',fillColor:'black',fillOpacity:1,radius:8
           }).addTo(map)
             .bindPopup('Your guess')
             .openPopup();
@@ -397,9 +361,8 @@
       guessBtn.style.display='none';
       labelText.textContent='Your Guess:';
 
-      const p=gamePhotos[current],
-            gl=map.userLatLng,
-            distKm=haversine(p.lat,p.lng,gl.lat,gl.lng),
+      const p=gamePhotos[current], gl=map.userLatLng;
+      const distKm=haversine(p.lat,p.lng,gl.lat,gl.lng),
             distMi=(distKm*0.621371).toFixed(1),
             errY=Math.abs(slider.value-p.year),
             sDist=Math.max(0,Math.round((1-distKm/EARTH_HALF_CIRC)*5000)),
@@ -460,17 +423,15 @@
 
         bounds.push(r.guess, r.correct);
       });
-
       totalScoreE.textContent=total;
       finalMap.fitBounds(L.latLngBounds(bounds).pad(0.2));
     }
 
-    // HELPERS
     function shuffle(a){ return a.sort(()=>0.5 - Math.random()); }
     function haversine(lat1,lng1,lat2,lng2){
       const R=6371, toRad=Math.PI/180;
       const dLat=(lat2-lat1)*toRad, dLng=(lng2-lng1)*toRad;
-      const h=Math.sin(dLat/2)**2 +
+      const h=Math.sin(dLat/2)**2+
               Math.cos(lat1*toRad)*Math.cos(lat2*toRad)*Math.sin(dLng/2)**2;
       return 2*R*Math.asin(Math.sqrt(h));
     }
