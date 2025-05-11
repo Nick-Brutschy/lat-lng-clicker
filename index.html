@@ -13,13 +13,14 @@
 
   <style>
     body { margin:0; font:16px/1.5 sans-serif; }
-    #photo { width:100%; max-height:400px; object-fit:cover; display:block; }
-    #map { height:400px; }
+    /* full-width, auto-height so the entire image shows */
+    #photo { width:100%; height:auto; display:block; }
+    #map   { height:400px; }
     #controls { padding:1em; display:flex; align-items:center; gap:1em; }
-    #slider { flex:1; }
+    #slider  { flex:1; }
     #results { padding:1em; }
     table { width:100%; border-collapse:collapse; margin-top:1em; }
-    th,td { border:1px solid #ccc; padding:0.5em; text-align:center; }
+    th,td  { border:1px solid #ccc; padding:0.5em; text-align:center; }
   </style>
 </head>
 <body>
@@ -54,8 +55,9 @@
   <!-- Leaflet JS -->
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // — Declare the map variable up front —
+    // — Globals —
     let map;
+    let marker;
 
     // —— CONFIG ——
     const MAX_ROUNDS = 5;
@@ -65,7 +67,7 @@
     // —— STATE ——
     let allPhotos = [], gamePhotos = [], current = 0, rounds = [];
 
-    // —— UI ELEMENTS ——
+    // —— UI NODES ——
     const photoEl     = document.getElementById('photo');
     const slider      = document.getElementById('slider');
     const yearDisp    = document.getElementById('yearDisplay');
@@ -75,13 +77,14 @@
     const resultsBody = document.getElementById('resultsBody');
     const totalScoreE = document.getElementById('totalScore');
 
-    // —— INITIAL SETUP ——
+    // —— SETUP SLIDER ——
     slider.min = YEAR_MIN;
     slider.max = YEAR_MAX;
     slider.addEventListener('input', () => {
       yearDisp.textContent = slider.value;
     });
 
+    // —— GUESS BUTTON ——
     guessBtn.addEventListener('click', () => {
       if (!map || !map.userLatLng) {
         return alert('Please click on the map to place your location guess.');
@@ -105,7 +108,7 @@
       nextRound();
     });
 
-    // —— LOAD METADATA & START ——
+    // —— LOAD PHOTO METADATA ——
     fetch('photos.json')
       .then(r => r.json())
       .then(arr => { allPhotos = arr; startGame(); })
@@ -127,22 +130,24 @@
       const p = gamePhotos[current];
       photoEl.src = p.src;
 
-      // reset slider
+      // reset year slider to midpoint
       const mid = Math.floor((YEAR_MIN + YEAR_MAX) / 2);
       slider.value = mid;
       yearDisp.textContent = mid;
 
-      // initialize or reset map
-      if (map) {
-        map.remove();
-      }
+      // reset map & marker
+      if (map) map.remove();
       map = L.map('map').setView([0, 0], 2);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19
       }).addTo(map);
 
-      // wait for user click
+      marker = null;
+
+      // drop a marker on click
       map.once('click', e => {
+        if (marker) marker.remove();
+        marker = L.marker(e.latlng).addTo(map);
         map.userLatLng = e.latlng;
       });
     }
@@ -176,9 +181,8 @@
       const toRad = Math.PI / 180;
       const dLat = (lat2 - lat1) * toRad;
       const dLng = (lng2 - lng1) * toRad;
-      const h = Math.sin(dLat / 2) ** 2 +
-                Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) *
-                Math.sin(dLng / 2) ** 2;
+      const h = Math.sin(dLat/2)**2 +
+                Math.cos(lat1*toRad)*Math.cos(lat2*toRad)*Math.sin(dLng/2)**2;
       return 2 * 6371 * Math.asin(Math.sqrt(h));
     }
   </script>
