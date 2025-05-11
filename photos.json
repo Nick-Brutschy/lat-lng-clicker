@@ -10,6 +10,24 @@
     "lat": 40.7128,
     "lng": -74.0060,
     "year": 1989
+  },
+  {
+    "src": "images/photo3.jpg",
+    "lat": 40.7128,
+    "lng": -74.0060,
+    "year": 1989
+  },
+  {
+    "src": "images/photo4.jpg",
+    "lat": 40.7128,
+    "lng": -74.0060,
+    "year": 1989
+  },
+  {
+    "src": "images/photo5.jpg",
+    "lat": 40.7128,
+    "lng": -74.0060,
+    "year": 1989
   }
-  // … up to as many as you like …
+  
 ]
