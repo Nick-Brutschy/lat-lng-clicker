@@ -16,41 +16,34 @@
       margin: 0;
       font: 16px/1.5 sans-serif;
     }
-
-    /* limit the photo height so it never dominates the screen */
+    /* Full image visible, but capped height so you still see map+controls */
     #photo {
       display: block;
+      margin: 0 auto;
       max-height: 300px;
       width: auto;
       max-width: 100%;
-      margin: 0 auto;
     }
-
     #map {
       height: 400px;
     }
-
     #controls {
       padding: 1em;
       display: flex;
       align-items: center;
       gap: 1em;
     }
-
     #slider {
       flex: 1;
     }
-
     #results {
       padding: 1em;
     }
-
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 1em;
     }
-
     th, td {
       border: 1px solid #ccc;
       padding: 0.5em;
@@ -98,8 +91,7 @@
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     // — Globals —
-    let map;
-    let marker;
+    let map, marker;
 
     // —— CONFIG ——
     const MAX_ROUNDS = 5;
@@ -169,26 +161,34 @@
     }
 
     function nextRound() {
+      // clear previous marker if any
+      if (marker) {
+        marker.remove();
+        marker = null;
+      }
+
+      // advance or show results
       if (current >= gamePhotos.length) {
         return showResults();
       }
 
+      // set up the new image
       const p = gamePhotos[current];
       photoEl.src = p.src;
 
-      // reset year slider to midpoint
+      // reset the year slider
       const mid = Math.floor((YEAR_MIN + YEAR_MAX) / 2);
       slider.value = mid;
       yearDisp.textContent = mid;
 
-      // reset map & marker
+      // reset the map
       if (map) map.remove();
       map = L.map('map').setView([0, 0], 2);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19
       }).addTo(map);
 
-      // allow moving the marker on each click
+      // on each click, move or create the marker
       map.on('click', e => {
         if (marker) {
           marker.setLatLng(e.latlng);
