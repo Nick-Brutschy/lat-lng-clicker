@@ -91,7 +91,7 @@
     /* MAP & CONTROLS */
     #map {
       flex: 1;
-      height: 300px;
+      height: 400px;    /* ↑ increased from 300px */
     }
     #controls {
       display: flex;
@@ -101,17 +101,17 @@
     #controls label { white-space: nowrap; }
     #slider {
       flex: 1;
-      accent-color: #d64541;
+      accent-color: #007bff;  /* match button color */
     }
     input[type='range']::-webkit-slider-thumb {
-      background: #d64541;
+      background: #007bff;    /* match button color */
       border: none;
       height: 16px;
       width: 16px;
       border-radius: 8px;
     }
     #guessButton {
-      background: #d64541;
+      background: #007bff;    /* changed to blue */
       color: white;
       border: none;
       padding: 0.75em 1.5em;
@@ -155,7 +155,10 @@
       padding: 0 1rem;
     }
     #finalArea { display: flex; gap: 1rem; }
-    #finalMap { flex: 1; height: 300px; }
+    #finalMap {
+      flex: 1;
+      height: 400px;   /* ↑ increased from 300px */
+    }
     #scoreTable { flex: 1; }
     table {
       width: 100%;
@@ -193,8 +196,7 @@
 
       <!-- MAP + CONTROLS SIDE -->
       <div id="interactionArea">
-        <!-- ← This MUST be here for Leaflet! -->
-        <div id="map"></div>
+        <div id="map"></div>  <!-- ↑ required for Leaflet -->
 
         <div id="controls">
           <label>
@@ -227,11 +229,20 @@
         <h2>Your Score</h2>
         <table>
           <thead>
-            <tr><th>Round</th><th>Distance (mi)</th><th>Year Err</th><th>Score</th></tr>
+            <tr>
+              <th>Round</th>
+              <th>Distance (mi)</th>
+              <th>Year Err</th>
+              <th>Score</th>
+            </tr>
           </thead>
           <tbody id="resultsBody"></tbody>
           <tfoot>
-            <tr><th>Total</th><td colspan="2"></td><th id="totalScore"></th></tr>
+            <tr>
+              <th>Total</th>
+              <td colspan="2"></td>
+              <th id="totalScore"></th>
+            </tr>
           </tfoot>
         </table>
       </div>
@@ -241,7 +252,6 @@
   <!-- LEAFLET JS -->
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // GLOBAL STATE
     let map, guessMarker, correctMarker, connectionLine, finalMap;
     let allPhotos = [], gamePhotos = [], current = 0, rounds = [];
     const MAX_ROUNDS = 5,
@@ -249,7 +259,7 @@
           YEAR_MAX = 2025,
           EARTH_HALF_CIRC = 20037.5;
 
-    // UI NODES
+    // UI references
     const splash      = document.getElementById('splash'),
           playBtn     = document.getElementById('playBtn'),
           gameDiv     = document.getElementById('game'),
@@ -267,169 +277,139 @@
           resultsBody = document.getElementById('resultsBody'),
           totalScoreE = document.getElementById('totalScore');
 
-    // LOAD PHOTOS
+    // Load photos
     fetch('photos.json')
       .then(r => r.json())
       .then(a => allPhotos = a)
       .catch(_ => alert('Could not load photos.json'));
 
-    // SLIDER SETUP
+    // Slider init
     slider.min = YEAR_MIN;
     slider.max = YEAR_MAX;
     slider.addEventListener('input', () => {
       yearDisp.textContent = slider.value;
     });
 
-    // IMAGE PAN/ZOOM
-    let scale = 1, ox = 0, oy = 0, sx, sy, panning = false;
+    // Image pan/zoom
+    let scale=1, ox=0, oy=0, sx, sy, panning=false;
     function updateImg() {
-      const c = photoEl.parentNode,
-            cw = c.clientWidth, ch = c.clientHeight,
-            sw = cw * scale, sh = ch * scale,
-            minX = Math.min(0, cw - sw),
-            minY = Math.min(0, ch - sh);
-      ox = Math.max(minX, Math.min(ox, 0));
-      oy = Math.max(minY, Math.min(oy, 0));
+      const c=photoEl.parentNode,
+            cw=c.clientWidth, ch=c.clientHeight,
+            sw=cw*scale, sh=ch*scale,
+            minX=Math.min(0,cw-sw), minY=Math.min(0,ch-sh);
+      ox=Math.max(minX, Math.min(ox,0));
+      oy=Math.max(minY, Math.min(oy,0));
       photoEl.style.transform = `translate(${ox}px,${oy}px) scale(${scale})`;
     }
     photoEl.addEventListener('wheel', e => {
       e.preventDefault();
-      scale = Math.min(Math.max(scale + (e.deltaY > 0 ? -0.1 : 0.1), 1), 5);
+      scale = Math.min(Math.max(scale + (e.deltaY>0?-0.1:0.1),1),5);
       updateImg();
     });
     photoEl.addEventListener('mousedown', e => {
-      panning = true;
-      sx = e.clientX - ox;
-      sy = e.clientY - oy;
-      photoEl.style.cursor = 'grabbing';
+      panning=true; sx=e.clientX-ox; sy=e.clientY-oy;
+      photoEl.style.cursor='grabbing';
     });
     document.addEventListener('mousemove', e => {
-      if (!panning) return;
-      ox = e.clientX - sx;
-      oy = e.clientY - sy;
-      updateImg();
+      if(!panning) return;
+      ox=e.clientX-sx; oy=e.clientY-sy; updateImg();
     });
     document.addEventListener('mouseup', () => {
-      panning = false;
-      photoEl.style.cursor = 'grab';
+      panning=false; photoEl.style.cursor='grab';
     });
 
-    // START BUTTON
+    // Start
     playBtn.onclick = () => {
-      splash.style.display = 'none';
-      gameDiv.style.display = 'block';
+      splash.style.display='none';
+      gameDiv.style.display='block';
       startGame();
     };
 
-    // GAME LOGIC
     function startGame() {
       gamePhotos = shuffle(allPhotos).slice(0, MAX_ROUNDS);
-      current = 0;
-      rounds = [];
+      current = 0; rounds=[];
       nextRound();
     }
 
     function nextRound() {
-      feedback.style.display = 'none';
-      captionFb.textContent = '';
-      labelText.textContent = 'Year:';
-      guessBtn.style.display = 'inline-block';
+      feedback.style.display='none';
+      captionFb.textContent='';
+      labelText.textContent='Year:';
+      guessBtn.style.display='inline-block';
+      [guessMarker,correctMarker,connectionLine].forEach(m=>m&&m.remove());
+      if(map) map.remove();
+      if(current>=gamePhotos.length) return showResults();
 
-      [guessMarker, correctMarker, connectionLine]
-        .forEach(m => m && m.remove());
-      if (map) map.remove();
-
-      if (current >= gamePhotos.length) return showResults();
-
-      // Load image
+      // Photo
       const p = gamePhotos[current];
-      scale = 1; ox = oy = 0; updateImg();
-      photoEl.src = p.src;
+      scale=1; ox=oy=0; updateImg();
+      photoEl.src=p.src;
+      const mid=(YEAR_MIN+YEAR_MAX)/2|0;
+      slider.value=mid; yearDisp.textContent=mid;
 
-      // Reset slider
-      const mid = Math.floor((YEAR_MIN + YEAR_MAX) / 2);
-      slider.value = mid;
-      yearDisp.textContent = mid;
+      // Map
+      map=L.map('map').setView([0,0],2);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19})
+       .addTo(map);
 
-      // Initialize map
-      map = L.map('map').setView([0, 0], 2);
-      L.tileLayer(
-        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        { maxZoom: 19 }
-      ).addTo(map);
-
-      map.on('click', e => {
-        const opts = { zIndexOffset: 1000 };
-        if (guessMarker) {
+      map.on('click', e=>{
+        const opts={zIndexOffset:1000};
+        if(guessMarker) {
           guessMarker.setLatLng(e.latlng);
         } else {
-          guessMarker = L.circleMarker(e.latlng, {
-            color: 'black',
-            fillColor: 'black',
-            fillOpacity: 1,
-            radius: 8,
+          guessMarker=L.circleMarker(e.latlng,{
+            color:'black',fillColor:'black',fillOpacity:1,radius:8,
             ...opts
           }).addTo(map)
             .bindPopup('Your guess')
             .openPopup();
         }
         guessMarker.bringToFront();
-        map.userLatLng = e.latlng;
+        map.userLatLng=e.latlng;
       });
 
-      slider.disabled = false;
-      guessBtn.disabled = false;
+      slider.disabled=false;
+      guessBtn.disabled=false;
     }
 
     guessBtn.onclick = () => {
-      if (!map || !map.userLatLng)
-        return alert('Click the map to place your guess first.');
+      if(!map||!map.userLatLng) return alert('Click the map to guess!');
 
-      // Lock in guess
       map.off('click');
-      slider.disabled = true;
-      guessBtn.disabled = true;
-      guessBtn.style.display = 'none';
-      labelText.textContent = 'Your Guess:';
+      slider.disabled=true;
+      guessBtn.disabled=true;
+      guessBtn.style.display='none';
+      labelText.textContent='Your Guess:';
 
-      const p = gamePhotos[current],
-            gl = map.userLatLng,
-            distKm = haversine(p.lat, p.lng, gl.lat, gl.lng),
-            distMi = (distKm * 0.621371).toFixed(1),
-            errY = Math.abs(slider.value - p.year),
-            sDist = Math.max(0, Math.round((1 - distKm / EARTH_HALF_CIRC) * 5000)),
-            sYear = Math.max(0, Math.round((1 - errY / (YEAR_MAX - YEAR_MIN)) * 5000)),
-            score = sDist + sYear;
+      const p=gamePhotos[current], gl=map.userLatLng;
+      const distKm=haversine(p.lat,p.lng,gl.lat,gl.lng),
+            distMi=(distKm*0.621371).toFixed(1),
+            errY=Math.abs(slider.value-p.year),
+            sDist=Math.max(0,Math.round((1-distKm/EARTH_HALF_CIRC)*5000)),
+            sYear=Math.max(0,Math.round((1-errY/(YEAR_MAX-YEAR_MIN))*5000)),
+            score=sDist+sYear;
 
-      rounds.push({ round: current + 1, distMi, errY, score, guess: gl, correct: [p.lat, p.lng] });
+      rounds.push({round:current+1,distMi,errY,score,guess:gl,correct:[p.lat,p.lng]});
 
-      // Show correct marker
-      correctMarker = L.circleMarker([p.lat, p.lng], {
-        color: 'red',
-        fillColor: 'red',
-        fillOpacity: 1,
-        radius: 8,
-        zIndexOffset: 500
+      correctMarker=L.circleMarker([p.lat,p.lng],{
+        color:'red',fillColor:'red',fillOpacity:1,radius:8,zIndexOffset:500
       }).addTo(map)
         .bindPopup('Location')
         .openPopup();
 
-      // Draw line
-      connectionLine = L.polyline([gl, [p.lat, p.lng]], {
-        color: 'red',
-        dashArray: '5,5'
+      connectionLine=L.polyline([gl,[p.lat,p.lng]],{
+        color:'red',dashArray:'5,5'
       }).addTo(map);
 
-      // Feedback
-      captionFb.textContent = p.caption;
-      feedbackMsg.innerHTML = `
+      captionFb.textContent=p.caption;
+      feedbackMsg.innerHTML=`
         <p>Your guess was <strong>${distMi} miles</strong> off.</p>
         <p>You were <strong>${errY} years</strong> off.</p>
         <p>Points — Loc: <strong>${sDist}</strong>/5000,
            Yr: <strong>${sYear}</strong>/5000,
            Total: <strong>${score}</strong>/10000.</p>
       `;
-      feedback.style.display = 'block';
+      feedback.style.display='block';
     };
 
     nextBtn.onclick = () => {
@@ -438,47 +418,43 @@
     };
 
     function showResults() {
-      gameDiv.style.display = 'none';
-      resultsDiv.style.display = 'block';
+      gameDiv.style.display='none';
+      resultsDiv.style.display='block';
 
-      finalMap = L.map(finalMapEl).setView([0, 0], 2);
-      L.tileLayer(
-        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        { maxZoom: 19 }
-      ).addTo(finalMap);
+      finalMap=L.map(finalMapEl).setView([0,0],2);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19})
+       .addTo(finalMap);
 
-      let total = 0, bounds = [];
-      rounds.forEach(r => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${r.round}</td>
-          <td>${r.distMi}</td>
-          <td>${r.errY}</td>
-          <td>${r.score}</td>
+      let total=0, bounds=[];
+      rounds.forEach(r=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+          <td>${r.round}</td><td>${r.distMi}</td>
+          <td>${r.errY}</td><td>${r.score}</td>
         `;
         resultsBody.appendChild(tr);
-        total += r.score;
+        total+=r.score;
 
-        L.circleMarker(r.guess, { color:'black', fillColor:'black', radius:6, zIndexOffset:1000 })
+        L.circleMarker(r.guess,{color:'black',fillColor:'black',radius:6,zIndexOffset:1000})
          .addTo(finalMap);
-        L.circleMarker(r.correct, { color:'red', fillColor:'red', radius:6, zIndexOffset:500 })
+        L.circleMarker(r.correct,{color:'red',fillColor:'red',radius:6,zIndexOffset:500})
          .addTo(finalMap);
-        L.polyline([r.guess, r.correct], { color:'red', dashArray:'5,5' })
+        L.polyline([r.guess,r.correct],{color:'red',dashArray:'5,5'})
          .addTo(finalMap);
 
-        bounds.push(r.guess, r.correct);
+        bounds.push(r.guess,r.correct);
       });
-      totalScoreE.textContent = total;
+      totalScoreE.textContent=total;
       finalMap.fitBounds(L.latLngBounds(bounds).pad(0.2));
     }
 
-    // HELPERS
-    function shuffle(a) { return a.sort(() => 0.5 - Math.random()); }
-    function haversine(lat1, lng1, lat2, lng2) {
-      const R=6371, toRad=Math.PI/180;
-      const dLat=(lat2-lat1)*toRad, dLng=(lng2-lng1)*toRad;
-      const h = Math.sin(dLat/2)**2 +
-                Math.cos(lat1*toRad)*Math.cos(lat2*toRad)*Math.sin(dLng/2)**2;
+    function shuffle(a){return a.sort(()=>0.5-Math.random());}
+    function haversine(lat1,lng1,lat2,lng2){
+      const R=6371,toRad=Math.PI/180;
+      const dLat=(lat2-lat1)*toRad,dLng=(lng2-lng1)*toRad;
+      const h=Math.sin(dLat/2)**2+
+              Math.cos(lat1*toRad)*Math.cos(lat2*toRad)*
+              Math.sin(dLng/2)**2;
       return 2*R*Math.asin(Math.sqrt(h));
     }
   </script>
