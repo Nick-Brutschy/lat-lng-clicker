@@ -1,38 +1,38 @@
 [
   {
     "src": "images/photo1.jpg",
-    "lat": 44.99018226348426,
-    "lng": -72.21107588586315,
+    "lat": 42.422053750212605,
+    "lng": -71.2034435049581,
     "year": 1966,
-    "caption": "Oma and Mom on the South Beach [1966]"
+    "caption": "Opa and Mom in Lexington [1966]"
   },
   {
     "src": "images/photo2.jpg",
-    "lat": 47.802602950503285,
-    "lng": -123.60521028802857,
-    "year": 2013,
-    "caption": "Criminal aprehended by police in Olympic National Park. ACAB [2013]"
+    "lat": 49.266593658849686,
+    "lng": -123.25928728201795,
+    "year": 2022,
+    "caption": "Mom and Dad in Nitobe Memorial Garden [2022]"
   },
   {
     "src": "images/photo3.jpg",
-    "lat": 47.802602950503285,
-    "lng": -123.60521028802857,
-    "year": 1974,
-    "caption": "Mom levitating somewhere in Bermuda. [1974]"
+    "lat": 51.213524119605324,
+    "lng": 4.404717317782582,
+    "year": 2009,
+    "caption": "Nick, Sophia and Mom going for a walk in Antwerp . [2009]"
   },
   {
     "src": "images/photo4.jpg",
-    "lat": 32.3232829243685,
-    "lng": -64.73673615273178,
-    "year": 2008,
-    "caption": "Nick catches a snowball in Lake Tahoe. [2008]"
+    "lat": 37.89394086327958,
+    "lng": -122.49718492293214,
+    "year": 1998,
+    "caption": "Mom and Dad's wedding at Lyford House in Tiburon, California [1998]"
   },
   {
     "src": "images/photo5.jpg",
-    "lat": 53.89397544711266,
-    "lng": -122.81416155499414,
-    "year": 2023,
-    "caption": "Mom and Dad posing with a polar bear in Prince George. [2023]"
+    "lat": 37.656617669234436,
+    "lng": -122.41570687116656,
+    "year": 2025,
+    "caption": "The LegendTM retiring from South San Francisco Clinic. [2025]"
   }
   
 ]
